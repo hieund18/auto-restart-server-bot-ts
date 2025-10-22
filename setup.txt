@@ -1,0 +1,126 @@
+Đây là các bước chi tiết bạn cần làm trên server.
+
+-----
+
+## 1\. Cài đặt Môi trường ⚙️
+
+Bạn cần cài đặt **Node.js** và **`forever`** trên server của mình.
+
+1.  **Cài đặt Node.js:** (Nếu bạn chưa có). Tôi khuyên dùng Node.js 18.x. Bạn có thể cài đặt nó qua `nvm` (Node Version Manager) hoặc trình quản lý gói của hệ điều hành.
+2.  **Cài đặt `forever`:** `forever` là một gói npm, bạn nên cài nó ở chế độ "toàn cục" (global):
+    ```bash
+    npm install -g forever
+    ```
+
+-----
+
+## 2\. Chuẩn bị Code 🚚
+
+1.  **Tải Code:** Tải toàn bộ thư mục dự án TypeScript (`my-ts-bot` với `src/index.ts`, `package.json`, v.v.) lên server của bạn. (Bạn có thể dùng `git clone` hoặc `scp`).
+2.  **Di chuyển vào thư mục:**
+    ```bash
+    cd /duong/dan/den/my-ts-bot
+    ```
+3.  **Cài đặt Dependencies:** Chạy lệnh này để cài đặt `telegraf`, `axios`, v.v. (những thư viện được định nghĩa trong `package.json`).
+    ```bash
+    npm install
+    ```
+
+-----
+
+## 3\. Biên dịch TypeScript 🛠️
+
+`forever` (giống như Node.js) không thể chạy trực tiếp file TypeScript (`.ts`). Bạn phải *biên dịch* nó sang JavaScript (`.js`) trước.
+
+1.  Chạy lệnh build đã được định nghĩa trong `package.json`:
+    ```bash
+    npm run build
+    ```
+2.  Lệnh này sẽ đọc file `tsconfig.json` và tạo một thư mục mới là `dist`, bên trong chứa file `index.js` đã được biên dịch. Đây chính là file mà `forever` sẽ chạy.
+
+-----
+
+## 4\. Sửa đường dẫn File JSON (Rất quan trọng) ⚠️
+
+Trong code TypeScript (`src/index.ts`), bạn đang lưu file user ở:
+`const USERS_FILE = '/data/authorized_users.json';`
+
+Đường dẫn `/data` này là dành cho Docker. Khi chạy trực tiếp, nó sẽ cố gắng ghi vào thư mục gốc `/data` của server, điều này có thể gây lỗi (hoặc không phải là nơi bạn muốn).
+
+**Bạn cần sửa lại như sau:**
+
+1.  Mở file `src/index.ts` để chỉnh sửa.
+2.  Tìm dòng:
+    `const USERS_FILE = '/data/authorized_users.json';`
+3.  Sửa nó thành đường dẫn tương đối (ví dụ: lưu vào một thư mục `data` ngay trong thư mục dự án của bạn):
+    `const USERS_FILE = './data/authorized_users.json';`
+4.  **Rất quan trọng:** Sau khi sửa code, bạn phải **biên dịch lại**:
+    ```bash
+    npm run build
+    ```
+
+-----
+
+## 5\. Cấu hình Biến Môi trường 🔑
+
+Bot của bạn (file `index.ts`) sử dụng `dotenv` để tự động đọc file `.env`. Bạn chỉ cần tạo file đó.
+
+1.  Tạo file `.env` ngay tại thư mục gốc của dự án (cùng chỗ với `package.json`).
+2.  Dán toàn bộ nội dung bí mật của bạn vào file `.env`:
+    ```env
+    TELEGRAM_TOKEN=8263386648:AAG8lgwHKU0GOdWAuHDbTO-pzsxZThsjVEg
+    SUPER_ADMIN_ID=6474818030
+    JENKINS_URL=http://10.168.3.144:8089
+    JENKINS_USER=his
+    JENKINS_TOKEN=110e1554ba51d9f29c5d697684ddbfad06
+    JENKINS_JOB=RESTART_HISTEST
+    ```
+
+File `index.js` (trong `dist`) sẽ tự động đọc các biến này khi nó chạy.
+
+-----
+
+## 6\. Chạy Bot bằng `forever` 🚀
+
+Bây giờ, mọi thứ đã sẵn sàng.
+
+1.  **Khởi động Bot:**
+    Chạy `forever` và trỏ nó đến file JavaScript đã được biên dịch:
+    ```bash
+    forever start dist/index.js
+    ```
+2.  **Kiểm tra Trạng thái:**
+    Xem danh sách các tiến trình đang chạy:
+    ```bash
+    forever list
+    ```
+    Bạn sẽ thấy một tiến trình `dist/index.js` với một `id` (ví dụ: `[0]`).
+
+### Các lệnh `forever` hữu ích:
+
+  * **Xem log (nhật ký) của bot:**
+    (Nếu `id` của bot là `0`)
+
+    ```bash
+    forever logs 0 -f
+    ```
+
+    (Nhấn `Ctrl+C` để dừng xem log).
+
+  * **Dừng bot:**
+
+    ```bash
+    forever stop 0
+    ```
+
+  * **Khởi động lại bot:**
+
+    ```bash
+    forever restart 0
+    ```
+
+  * **Dừng tất cả:**
+
+    ```bash
+    forever stopall
+    ```
