@@ -124,3 +124,22 @@ Bây giờ, mọi thứ đã sẵn sàng.
     ```bash
     forever stopall
     ```
+
+Tạo một thư mục logs trong dự án của bạn:
+
+Bash
+
+cd /duong/dan/den/my-ts-bot
+mkdir logs
+Khi chạy, sử dụng các cờ -o (output) và -e (error):
+
+Bash
+
+# Dừng bot cũ (nếu đang chạy)
+forever stopall
+
+# Khởi động lại và chỉ định file log
+forever start -o logs/bot.out.log -e logs/bot.err.log dist/index.js
+-o logs/bot.out.log: Lưu tất cả console.log vào file này.
+
+-e logs/bot.err.log: Lưu tất cả console.error vào file này.
